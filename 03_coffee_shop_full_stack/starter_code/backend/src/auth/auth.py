@@ -197,10 +197,11 @@ def requires_auth(permission=''):
             token = get_token_auth_header()
             try:
                 payload = verify_decode_jwt(token)
-                print(payload)
-                check_permissions(permission, payload)
+                # print(payload)
             except:
                 abort(401) 
+            check_permissions(permission, payload)
+
             return f(payload, *args, **kwargs)
 
         return wrapper
