@@ -34,7 +34,7 @@ class AuthError(Exception):
 def get_token_auth_header():
 
     auth_header = request.headers.get('Authorization', None)
-
+  
     if not auth_header:
         raise AuthError({
             'code': 'authorization_header_missing',
@@ -43,7 +43,7 @@ def get_token_auth_header():
 
     token_header = auth_header.split(" ")
     if token_header[0].lower() != 'bearer':
-        print(token_header, 'len=0')
+        # print(token_header, 'len=0')
 
         raise AuthError({
             'code':'invalid_header',
@@ -51,7 +51,7 @@ def get_token_auth_header():
         }, 401)
 
     elif len(token_header) == 1:
-        print(token_header, 'len=1')
+        # print(token_header, 'len=1')
 
         raise AuthError({
             'code':'invalid_header',
@@ -60,15 +60,15 @@ def get_token_auth_header():
 
 
     elif len (token_header) > 2:
-        print(token_header, 'len>2')
+        # print(token_header, 'len>2')
 
         raise AuthError({
             'code':'invalid_header',
             'description': 'Authorization header must start with Bearer token'
         }, 401)
 
-    token = auth_header[1]
-    print(token)
+    token = token_header[1]
+    # print(token)
     return  token 
 '''
 @TODO implement check_permissions(permission, payload) method
@@ -111,10 +111,13 @@ def check_permissions(permission, payload):
 '''
 def verify_decode_jwt(token):
     jsonurl = urlopen(f'https://{AUTH0_DOMAIN}/.well-known/jwks.json')
+    print(jsonurl)
     jwks = json.loads(jsonurl.read())
-    unverified_header = jwt.get_unverified_header(token).get('kid')
+    unverified_header = jwt.get_unverified_header(token)
     rsa_key = {}
+    print(unverified_header)
     if 'kid' not in unverified_header:
+        print('teste')
         raise AuthError({
             'code': 'invalid_header',
             'description': 'Authorization malformed.'
@@ -129,7 +132,9 @@ def verify_decode_jwt(token):
                 'n': key['n'],
                 'e': key['e']
             }
+    print("teste")
     if rsa_key:
+
         try:
             payload = jwt.decode(
                 token,
@@ -138,16 +143,19 @@ def verify_decode_jwt(token):
                 audience=API_AUDIENCE,
                 issuer='https://' + AUTH0_DOMAIN + '/'
             )
-
+            print(payload)
             return payload
 
         except jwt.ExpiredSignatureError:
+            print('token expired')
             raise AuthError({
                 'code': 'token_expired',
                 'description': 'Token expired.'
             }, 401)
 
         except jwt.JWTClaimsError:
+            print('invalid claims')
+
             raise AuthError({
                 'code': 'invalid_claims',
                 'description': 'Incorrect claims. Please, check the audience and issuer.'
@@ -171,16 +179,6 @@ def verify_decode_jwt(token):
 #         return get_unverified_header(token)
     
 
-# def jwt_refresh_token_needed(func):
-#     @wraps(func)
-#     def decorator(*args, **kwargs):
-#         try:
-#             verify_decode_jwt()
-#         except (ValueError, TypeError):
-#             return {'error': 'refresh token error'}, 401
-
-#         return func(*args, **kwargs)
-#     return decorator
 
 '''
 @TODO implement @requires_auth(permission) decorator method
@@ -199,6 +197,7 @@ def requires_auth(permission=''):
             token = get_token_auth_header()
             try:
                 payload = verify_decode_jwt(token)
+                print(payload)
                 check_permissions(permission, payload)
             except:
                 abort(401) 

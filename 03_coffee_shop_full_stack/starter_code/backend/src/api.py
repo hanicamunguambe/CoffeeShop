@@ -99,10 +99,11 @@ def get_drinks_detail(payload):
 def create_drinks(payload):
     body = request.get_json()
 
-    new_title = body.get('title', None)
-    new_recipe = body.get('recipe', None)
     try:
-    
+        
+        new_title = body.get('title', None)
+        new_recipe = body.get('recipe', None)
+
         drink = Drink(title=new_title, recipe=json.dumps(new_recipe))
         drink.insert()
 
@@ -127,17 +128,22 @@ def create_drinks(payload):
 '''
 @app.route('/drinks/<int:id>', methods=['PATCH'])
 @requires_auth('patch:drinks')
-def update_drinks(id, payload):
+def update_drinks(payload, id):
     body = request.get_json()
     
     drink = Drink.query.filter(Drink.id==id).one_or_none()
 
-    update_title = body.get('title', None)
-    update_recipe = body.get('recipe', None)
-
     try:
-        
-        drink = Drink(title=update_title, recipe=json.dumps(update_recipe))
+        update_title = body.get('title', None)
+        update_recipe = body.get('recipe', None)
+        # drink = Drink(title=update_title, recipe=json.dumps(update_recipe))
+
+        if update_title != None:
+            drink.title = update_title
+            
+        if update_recipe != None:
+            drink.recipe = json.dumps(body['update_recipe'])
+            
         drink.update()
 
         return jsonify({
@@ -160,11 +166,11 @@ def update_drinks(id, payload):
 '''
 @app.route('/drinks/<int:id>', methods=['DELETE'])
 @requires_auth('delete:drinks')
-def delete_drinks(id, payload):
+def delete_drinks(payload, id):
+
+    drink = Drink.query.filter(Drink.id==id).one_or_none()
 
     try:
-        drink = Drink.query.filter(Drink.id==id).one_or_none()
-
         if drink is None:
             abort(404)
 
